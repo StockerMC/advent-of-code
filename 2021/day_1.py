@@ -1,9 +1,9 @@
 import more_itertools
 
 from util import get_input
-values = get_input(day=1, func=int)
+values = get_input(2021, 1, func=int)
 
-def part_one() -> int:
+def part_one():
     previous_value: int | None = None
     increased_measurements = 0
 
@@ -13,9 +13,9 @@ def part_one() -> int:
 
         previous_value = value
 
-    return increased_measurements
+    print(increased_measurements)
 
-def part_two() -> int:
+def part_two():
     increased_sums = previous_sum = 0
     groups = list(more_itertools.triplewise(values))
     for group in groups[1:]:
@@ -25,4 +25,4 @@ def part_two() -> int:
         
         previous_sum = group_sum
 
-    return increased_sums
+    print(increased_sums)
