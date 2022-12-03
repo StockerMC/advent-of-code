@@ -1,29 +1,19 @@
 from util import get_input
 lines = get_input(2022, 1)
 
-def part_one():
-    # print(max(sum(map(int, group.split())) for group in lines.split('\n\n')))
-    maxv = 0
-    v = 0
-    for line in lines:
-        if not line:
-            maxv = max(maxv, v)
-            v = 0
-            continue
-        v += int(line)
+values = []
+cur = 0
+for line in lines:
+    if not line:
+        values.append(cur)
+        cur = 0
+    else:
+        cur += int(line)
 
-    print(maxv)
+def part_one():
+    print(max(values))
+    # print(max(sum(map(int, group.split())) for group in lines.split('\n\n')))
 
 def part_two():
-    maxv = []
-    v = 0
-    for line in lines:
-        if not line:
-            maxv.append(v)
-            v = 0
-            continue
-
-        v += int(line)
-
-    maxv.sort()
-    print(sum(maxv[-3:]))
+    values.sort()
+    print(sum(values[-3:]))
