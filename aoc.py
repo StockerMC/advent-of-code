@@ -17,7 +17,7 @@ REGEX_FLAGS = re.DOTALL
 SAMPLE_INPUT_REGEX = r'For example.*?:.*?<pre><code>(.*?)</code></pre>'
 SAMPLE_P1_ANSWER_REGEX = r'.*?<code><em>(.*?)</em></code>'
 SAMPLE_P2_ANSWER_REGEX = r'Part Two.*?<code><em>(.*?)</em></code>'
-TIME_REGEX = r'You have (?:(\d+)m)?(\d+)s left to wait.'
+TIME_REGEX = r'You have (?:(\d+)m )?(\d+)s left to wait.'
 
 def i(s: str):
     return int(s) if s.isdigit() else s
@@ -47,12 +47,12 @@ class Runner:
         response.raise_for_status()
 
         html = response.text
-        # doesn't work for all < 2022 days, may need to use findall for that instead
         if not (match := re.search(SAMPLE_INPUT_REGEX, html, REGEX_FLAGS)):
             return None
 
         sample_input = match.group(1)
 
+        # TODO: doesn't work for all inputs, use findall[-1] and change regex to stop before part two
         regex = SAMPLE_P1_ANSWER_REGEX if part == 1 else SAMPLE_P2_ANSWER_REGEX
         if not (match := re.search(regex, html, REGEX_FLAGS)):
             return None
@@ -76,7 +76,9 @@ class Runner:
         response = self.session.get(f'{self.url}/input')
         response.raise_for_status()
 
-        text = response.text.rstrip('\n')
+        text = response.text
+        if not text.endswith('\n'):
+            text += '\n'
         path.write_text(text)
         return text
 
@@ -100,18 +102,48 @@ class Runner:
     def call_part(self, part: int, lines: str):
         module = self.get_module()
         func = getattr(module, f'part_{"one" if part == 1 else "two"}')
-        return func(lines.splitlines())
+        converter = getattr(func, 'converter', None)
+        param = lines.splitlines()
+        if converter is not None:
+            param = [converter(line) for line in param]
+        return func(param)
 
-    @staticmethod
-    def confirm(msg: str, default: bool = True) -> bool:
-        cont = input(msg).lower()
-        return default if cont == '' else cont == 'y'
+    # @staticmethod
+    # def confirm(msg: str, debug_option: bool = False) -> bool:
+    #     cont = input(f'{msg} ').lower()
+    #     return default if cont == '' and default is not None else cont == 'y'
+
+    def confirm(self, msg: str, *, no_option: bool = False, debug_option: bool = False):
+        cont = None
+        opts = ['', 'y']
+        if debug_option:
+            opts.append('d')
+        if no_option:
+            opts.append('n')
+
+        while cont not in opts:
+            cont = input(f'{msg} ').lower()
+        return 'y' if cont == '' else cont
+
+    def manual_input(self, part: int):
+        cont = self.confirm('Do you want to manually enter the sample input (Y/n)?', no_option=True)
+        if cont == 'n':
+            return False
+
+        print('Enter the input (EOF indicated by ::|:: on a new line):')
+        lines = [line for line in iter(input, '::|::')]
+        answer = input('Enter the answer: ')
+        with open(pathlib.Path(__file__).parent / f'{self.year}/inputs/day_{self.day}_p{part}.txt', 'w') as f:
+            f.write('\n'.join(lines) + f'\n::|::\n{answer}')
+        return self.verify_sample(part)
 
     def verify_sample(self, part: int) -> bool:
         print(f'Verifying the part {part} solution with the sample input...')
         sample = self.get_sample(part)
         if sample is None:
-            return self.confirm(f"Can't verify the solution with the sample input. Submit anyways (Y/n)?")
+            # When the sample wasn't parsed correctly (older years)
+            print("Can't parse the sample input.")
+            return self.manual_input(part)
 
         inp, ans = sample
         ret = self.call_part(part, inp)
@@ -121,15 +153,7 @@ class Runner:
         elif not isinstance(ret, type(ans)):
             print(f'Return type is {type(ret).__name__}; should be {type(ans).__name__} ({ans!r}).')
             # When the sample wasn't parsed correctly (older years)
-            cont = self.confirm('Do you want to manually enter the sample input (y/N)?', default=False)
-            if cont:
-                print('Enter the input ("input"::|::"answer"<newline>::|::) (without the quotes):')
-                lines = [line for line in iter(input, '::|::')]
-                with open(pathlib.Path(__file__).parent / f'{self.year}/inputs/day_{self.day}_p{part}.txt', 'w') as f:
-                    f.write('\n'.join(lines))
-                return self.verify_sample(part)
-                    
-            return False
+            return self.manual_input(part)
         elif ans != ret:
             msg = f'Return value is {ret!r}; should be {ans!r}.'
             if isinstance(ans, int):
@@ -137,42 +161,27 @@ class Runner:
             print(msg)
             return False
 
+        print(f'Sample answer is correct: {ans}')
         return True
 
-    def solve(self, part: int):
-        from typing import TYPE_CHECKING
-        if not TYPE_CHECKING:
-            module = self.get_module()
-            for part in ('one', 'two'):
-                func = getattr(module, f'part_{part}')
-                ret = func()
-                print(f'Part {part}: {ret}')
-        if TYPE_CHECKING:
-            for p in range(part, 3):
-                # verified = self.verify_sample(p)
-                # if not verified:
-                #     return
-                # inp = self.get_input()
-                # ret = self.call_part(p, inp)
-                # self.submit(p, ret)
-                ...
-
-    def sleep(self, seconds: int, part: int, answer: int | str):
+    def sleep(self, seconds: int, part: int, answer: int | str) -> None:
         padding = len(str(seconds))
         for s in range(seconds, 0, -1):
             print('Remaining: {s:0{padding}}s'.format(s=s, padding=padding), end='\r')
             time.sleep(1)
 
-        cont = False
-        while not cont:
-            cont = self.confirm(f'Ready to submit part {part} (Y/n)?')
-            if cont:
-                return self.submit(part)
+        self.confirm(f'Ready to submit part {part} (Y)?')
+        return self.submit(part)
 
-    def submit(self, part: int):
+    def submit(self, part: int) -> None:
         verified = self.verify_sample(part)
         if not verified:
-            return False
+            self.confirm('Try again (Y)?')
+            return self.submit(part)
+
+        opt = self.confirm(f'Ready to submit part {part} (y/d)?', debug_option=True)
+        if opt == 'd':
+            return self.submit(part)
 
         inp = self.get_input()
         answer = self.call_part(part, inp)
@@ -180,20 +189,20 @@ class Runner:
         bad_attempts = self.bad_attempts[part]
         if answer in bad_attempts:
             print(f'Already tried submitting this answer: {answer}')
-            cont = self.confirm('Try again (Y/n)?')
-            if cont:
-                self.submit(part)
+            self.confirm('Try again (Y)?')
+            return self.submit(part)
 
         response = self.session.post(f'{self.url}/answer', data={'level': part, 'answer': answer})
+        response.raise_for_status()
         text = response.text
         if "That's the right answer" in text:
             print('Correct!')
             if part == 1:
                 self.bad_attempts[2].append(answer)
-                return self.confirm('Move on to part 2 (Y/n)?')
+                print('Moving on to part 2.')
+                self.submit(part + 1)
             else:
                 print('Finished!')
-                return False
 
         elif "That's not the right answer" in text:
             print(f'Incorrect answer: {answer}. Sleeping 60 seconds.')
@@ -202,7 +211,7 @@ class Runner:
 
         elif 'You gave an answer too recently' in text:
             print('You have to wait before submitting.')
-            if (match := re.search(text, TIME_REGEX)):
+            if (match := re.search(TIME_REGEX, text)):
                 m, s = match.groups()
                 m = int(m) if m else 0
                 s = int(s) + m
@@ -214,6 +223,8 @@ class Runner:
 
         elif 'Did you already complete it' in text:
             print("You've already completed this part.")
+            if part == 1:
+                return self.submit(part + 1)
 
 def get_date() -> tuple[int, int]:
     now = datetime.datetime.now(ZoneInfo("America/New_York"))
@@ -233,12 +244,10 @@ def main():
     parser.add_argument('--override-samples', '-os', action='store_true')
     args = parser.parse_args()
     runner = Runner(args.year, args.day, override_samples=args.override_samples)
-    cont = runner.submit(args.part)
-    if cont:
-        runner.submit(args.part + 1)
+    runner.submit(args.part)
 
 if __name__ == '__main__':
     main()
 
 # TODO: interactive session with submit/verify commands
-# TODO: ALLOW TO RUN FILE BEFORE SUBMITTING
+# TODO: ALLOW TO RUN FILE BEFORE SUBMITTING (TO TEST)
