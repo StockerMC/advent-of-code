@@ -14,7 +14,7 @@ def part_one():
         same = set(a) & set(b)
         score += priority(same.pop())
 
-    print(score)
+    return score
 
 def part_two():
     score = 0
@@ -23,4 +23,4 @@ def part_two():
         same = sets[0] & sets[1] & sets[2]
         score += priority(same.pop())
 
-    print(score)
+    return score

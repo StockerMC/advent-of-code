@@ -15,7 +15,7 @@ def part_one():
         elif all(x in range(b1, b2 + 1) for x in range(a1, a2 + 1)):
             count += 1
 
-    print(count)
+    return count
 
 def part_two():
     # could've used set.intersection to check for any overlaps
@@ -29,4 +29,4 @@ def part_two():
         elif any(x in range(b1, b2 + 1) for x in range(a1, a2 + 1)):
             count += 1
 
-    print(count)
+    return count

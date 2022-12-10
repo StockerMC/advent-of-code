@@ -1,3 +1,5 @@
+import collections, string, itertools, math, more_itertools, re, functools
+
 from util import get_input
 lines = get_input(2022, 2)
 
@@ -16,7 +18,7 @@ def part_one():
         elif ord(o) - 65 == ord(m) - 88:
             score += 3
 
-    print(score)
+    return score
 
 def part_two():
     loss = {
@@ -44,4 +46,4 @@ def part_two():
         else:
             score += win[o] + 6
 
-    print(score)
+    return score

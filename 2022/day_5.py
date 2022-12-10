@@ -20,7 +20,7 @@ def part_one():
         taken = [stacks[b].pop() for _ in range(min(a, len(stacks[b])))]
         stacks[c].extend(taken)
 
-    print(''.join(stack[-1] for stack in stacks))
+    return ''.join(stack[-1] for stack in stacks if stack)
 
 def part_two():
     for line in lines:
@@ -31,3 +31,5 @@ def part_two():
         c -= 1
         taken = [stacks[b].pop() for _ in range(min(a, len(stacks[b])))]
         stacks[c].extend(reversed(taken))
+
+    return ''.join(stack[-1] for stack in stacks if stack)
