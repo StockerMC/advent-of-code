@@ -4,6 +4,7 @@ import pathlib
 from typing import Any, Callable, Literal, TypeVar, overload
 
 T = TypeVar('T')
+PT = TypeVar('PT', int, str)
 
 @overload
 def get_input(year: int, day: int, *, raw: Literal[True], func: None = ...) -> str:
@@ -24,3 +25,9 @@ def get_input(year: int, day: int, *, raw: bool = False, func: Callable[[str], A
             return text
         values = [func(value) if func else value for value in text.splitlines()]
         return values
+
+def convert(converter: Callable[[str], T]) -> Callable[[Callable[[list[T]], PT]], Callable[[list[T]], PT]]:
+    def decorator(func: Callable[[list[T]], PT]) -> Callable[[list[T]], PT]:
+        func.converter = converter
+        return func
+    return decorator
