@@ -1,9 +1,6 @@
 import collections
 
-from util import get_input
-lines = get_input(2021, 3)
-
-def part_one():
+def part_one(lines: list[str]):
     a = collections.defaultdict(list)
     g = ''
     e = ''
@@ -20,4 +17,30 @@ def part_one():
 
     return int(g, 2) * int(e, 2)
 
-# def part_two():
+def part_two(lines: list[str]):
+    a = collections.defaultdict(list)
+    oxygen = lines.copy()
+    scrubber = lines.copy()
+
+    i = 0
+    while len(oxygen) > 1:
+        a = [line[i] for line in oxygen]
+        c = collections.Counter(a).most_common()
+        m = c[0][0]
+        if c[0][1] == c[1][1]:
+            m = '1'
+        oxygen = [x for x in oxygen if x[i] == m]
+        i += 1
+
+    i = 0
+    while len(scrubber) > 1:
+        a = [line[i] for line in scrubber]
+        c = collections.Counter(a).most_common()
+        l = c[1][0]
+        if c[0][1] == c[1][1]:
+            l = '0'
+        scrubber = [x for x in scrubber if x[i] == l]
+        i += 1
+
+    
+    return int(scrubber[0], 2) * int(oxygen[0], 2)

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import collections
 import datetime
+from html import unescape
 import importlib.util
 import pathlib
 import re
@@ -20,7 +21,10 @@ SAMPLE_P2_ANSWER_REGEX = r'Part Two.*?<code><em>(.*?)</em></code>'
 TIME_REGEX = r'You have (?:(\d+)m )?(\d+)s left to wait.'
 
 def i(s: str):
-    return int(s) if s.isdigit() else s
+    try:
+        return int(s)
+    except ValueError:
+        return s
 
 class Runner:
     def __init__(self, year: int, day: int, override_samples: bool) -> None:
@@ -46,7 +50,7 @@ class Runner:
         response = self.session.get(f'https://adventofcode.com/{self.year}/day/{self.day}')
         response.raise_for_status()
 
-        html = response.text
+        html = unescape(response.text)
         if not (match := re.search(SAMPLE_INPUT_REGEX, html, REGEX_FLAGS)):
             return None
 
@@ -76,7 +80,7 @@ class Runner:
         response = self.session.get(f'{self.url}/input')
         response.raise_for_status()
 
-        text = response.text
+        text = unescape(response.text)
         if not text.endswith('\n'):
             text += '\n'
         path.write_text(text)
@@ -113,28 +117,43 @@ class Runner:
     #     cont = input(f'{msg} ').lower()
     #     return default if cont == '' and default is not None else cont == 'y'
 
-    def confirm(self, msg: str, *, no_option: bool = False, debug_option: bool = False):
+    def write_sample(self, part: int, lines: list[str], answer: int | str) -> None:
+        path = pathlib.Path(__file__).parent / f'{self.year}/inputs/day_{self.day}_p{part}.txt'
+        with open(path, 'w') as f:
+            f.write('\n'.join(lines) + f'\n::|::\n{answer}')
+
+    def confirm(self, msg: str, *, extra: list[str] | None = None) -> str:
         cont = None
         opts = ['', 'y']
-        if debug_option:
-            opts.append('d')
-        if no_option:
-            opts.append('n')
+        if extra:
+            opts.extend(extra)
 
         while cont not in opts:
             cont = input(f'{msg} ').lower()
         return 'y' if cont == '' else cont
 
     def manual_input(self, part: int):
-        cont = self.confirm('Do you want to manually enter the sample input (Y/n)?', no_option=True)
-        if cont == 'n':
-            return False
+        lines = answer = None
+        if part == 2:
+            cont = self.confirm('Do you want to use the sample input for part 1 (Y/n)?', extra=['n'])
+            if cont == 'y':
+                part_one_sample = self.get_sample(part - 1)
+                if part_one_sample is None:
+                    print('Cannot parse the sample input for part 1.')
+                else:
+                    lines = part_one_sample[0].splitlines()
+                    answer = input('Enter the answer: ')
 
-        print('Enter the input (EOF indicated by ::|:: on a new line):')
-        lines = [line for line in iter(input, '::|::')]
-        answer = input('Enter the answer: ')
-        with open(pathlib.Path(__file__).parent / f'{self.year}/inputs/day_{self.day}_p{part}.txt', 'w') as f:
-            f.write('\n'.join(lines) + f'\n::|::\n{answer}')
+        if lines is None or answer is None:
+            cont = self.confirm('Do you want to manually enter the sample input? (Y/n)', extra=['n'])
+            if cont == 'n':
+                return False
+
+            print('Enter the input (EOF indicated by ::|:: on a new line):')
+            lines = [line for line in iter(input, '::|::')]
+            answer = input('Enter the answer: ')
+
+        self.write_sample(part, lines, answer)
         return self.verify_sample(part)
 
     def verify_sample(self, part: int) -> bool:
@@ -142,7 +161,7 @@ class Runner:
         sample = self.get_sample(part)
         if sample is None:
             # When the sample wasn't parsed correctly (older years)
-            print("Can't parse the sample input.")
+            print('Cannot parse the sample input.')
             return self.manual_input(part)
 
         inp, ans = sample
@@ -176,10 +195,11 @@ class Runner:
     def submit(self, part: int) -> None:
         verified = self.verify_sample(part)
         if not verified:
-            self.confirm('Try again (Y)?')
-            return self.submit(part)
+            opt = self.confirm('Try verifying with the sample again (Y/n)?', extra=['n'])
+            if opt == 'y':
+                return self.submit(part)
 
-        opt = self.confirm(f'Ready to submit part {part} (y/d)?', debug_option=True)
+        opt = self.confirm(f'Ready to submit part {part} (y/d)?', extra=['d'])
         if opt == 'd':
             return self.submit(part)
 
@@ -251,3 +271,4 @@ if __name__ == '__main__':
 
 # TODO: interactive session with submit/verify commands
 # TODO: ALLOW TO RUN FILE BEFORE SUBMITTING (TO TEST)
+# TODO: use part 1 input if cant find part 2

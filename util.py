@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Any, Callable, Literal, TypeVar, overload
+from typing import Any, Callable, Generic, Literal, TypeVar, overload
 
 T = TypeVar('T')
 PT = TypeVar('PT', int, str)
+Point = tuple[int, int]
 
 @overload
 def get_input(year: int, day: int, *, raw: Literal[True], func: None = ...) -> str:
@@ -31,3 +32,10 @@ def convert(converter: Callable[[str], T]) -> Callable[[Callable[[list[T]], PT]]
         func.converter = converter
         return func
     return decorator
+
+# class Grid(Generic[T]):
+#     def __init__(self, data: list[list[T]]) -> None:
+#         self.data = data
+
+#     def diagonals_from(self, point: Point):
+#         # for i in range
