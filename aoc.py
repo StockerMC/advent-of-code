@@ -15,7 +15,8 @@ from zoneinfo import ZoneInfo
 import requests
 
 REGEX_FLAGS = re.DOTALL
-SAMPLE_INPUT_REGEX = r'For example.*?:.*?<pre><code>(.*?)</code></pre>'
+SAMPLE_P1_INPUT_REGEX = r'For example.*?:.*?<pre><code>(.*?)</code></pre>'
+SAMPLE_P2_INPUT_REGEX = r'Part Two.*?For example.*?:.*?<pre><code>(.*?)</code></pre>'
 SAMPLE_P1_ANSWER_REGEX = r'.*?<code><em>(.*?)</em></code>'
 SAMPLE_P2_ANSWER_REGEX = r'Part Two.*?<code><em>(.*?)</em></code>'
 TIME_REGEX = r'You have (?:(\d+)m )?(\d+)s left to wait.'
@@ -51,13 +52,15 @@ class Runner:
         response.raise_for_status()
 
         html = unescape(response.text)
-        if not (match := re.search(SAMPLE_INPUT_REGEX, html, REGEX_FLAGS)):
+        regex = SAMPLE_P1_INPUT_REGEX if part == 1 else SAMPLE_P2_INPUT_REGEX
+        if not (match := re.search(regex, html, REGEX_FLAGS)):
             return None
 
         sample_input = match.group(1)
 
         # TODO: doesn't work for all inputs, use findall[-1] and change regex to stop before part two
         regex = SAMPLE_P1_ANSWER_REGEX if part == 1 else SAMPLE_P2_ANSWER_REGEX
+        # breakpoint()
         if not (match := re.search(regex, html, REGEX_FLAGS)):
             return None
 
