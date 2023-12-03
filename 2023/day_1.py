@@ -2,19 +2,10 @@ import collections, string, itertools, math, more_itertools, re, functools
 
 def part_one(lines: list[str]):
     sum = 0
-    # can be combined to one line lol
+    # can be combined to one line probably
     for line in lines:
-        num = ''
-        for char in line:
-            if char.isdigit():
-                num += char
-                break
-        for char in line[::-1]:
-            if char.isdigit():
-                num += char
-                break
-        # breakpoint()
-        sum += int(num)
+        digits = re.findall(r'\d', line)
+        sum += int(digits[0] + digits[-1])
     return sum
 
 def part_two(lines: list[str]):
@@ -29,17 +20,18 @@ def part_two(lines: list[str]):
         'eight': '8',
         'nine': '9',
     }
+    all_numbers = list(mapping.keys()) + list(mapping.values())
+
     lines = lines.copy()
-    sum = 0
     for i in range(len(lines)):
         line = lines[i]
         indices: list[tuple[int, str]] = []
-        for x in (list(mapping.keys()) + list(mapping.values())):
-            for match in re.finditer(x, line):
-                indices.append((match.end(), match.group(0)))
+        # eightwo -> [eight, two]
+        for num in all_numbers:
+            for m in re.finditer(num, line):
+                indices.append((m.end(), m.group(0)))
 
         indices.sort(key=lambda x: x[0])
-        lines[i] = re.sub('|'.join(list(mapping.keys()) + list(mapping.values())), lambda m: mapping.get(m.group(0), m.group(0)), ''.join(map(lambda x: x[1], indices)))
-        # breakpoint()
+        lines[i] = re.sub('|'.join(all_numbers), lambda m: mapping.get(m.group(0), m.group(0)), ''.join(map(lambda x: x[1], indices)))
 
     return part_one(lines)
