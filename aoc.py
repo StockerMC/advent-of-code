@@ -138,12 +138,14 @@ class Runner:
     def manual_input(self, part: int):
         lines = answer = None
         if part == 2:
+            # TODO: fix infinite "verifying the part ... solution" loop
             cont = self.confirm('Do you want to use the sample input for part 1 (Y/n)?', extra=['n'])
             if cont == 'y':
                 part_one_sample = self.get_sample(part - 1)
                 if part_one_sample is None:
                     print('Cannot parse the sample input for part 1.')
                 else:
+                    # TODO: automatically get the sample answer for part 2
                     lines = part_one_sample[0].splitlines()
                     answer = input('Enter the answer: ')
 
@@ -163,7 +165,7 @@ class Runner:
         print(f'Verifying the part {part} solution with the sample input...')
         sample = self.get_sample(part)
         if sample is None:
-            # When the sample wasn't parsed correctly (older years)
+            # When the sample wasn't parsed correctly
             print('Cannot parse the sample input.')
             return self.manual_input(part)
 
