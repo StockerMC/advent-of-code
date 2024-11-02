@@ -11,7 +11,6 @@ def part_one(lines: list[str]):
     for i, line in enumerate(lines):
         j = 0
         while j < len(line):
-            # print(j)
             num = ''
             ispart = False
             if j >= len(line):
@@ -20,12 +19,6 @@ def part_one(lines: list[str]):
                 if j >= len(line):
                     break
                 num += line[j]
-                # print(any(falseyaccess(falseyaccess(lines, i+1), j-1+x) not in list('1234567890.') for x in range(3)))
-                # breakpoint()
-                # 592 FLASE
-                # 664 FALSE
-                # if num == '592':
-                #     breakpoint()
                 if any(falseyaccess(falseyaccess(lines, i-1), j-1+x) not in list('1234567890.') + [None] for x in range(3)):
                     ispart = True
                 elif any(falseyaccess(falseyaccess(lines, i+1), j-1+x) not in list('1234567890.') + [None] for x in range(3)):
@@ -35,15 +28,13 @@ def part_one(lines: list[str]):
                 j += 1
                 if j >= len(line):
                     break
-            # if num:
-                # print(num, ispart)
-                # breakpoint()
+
             if ispart:
                 total += int(num)
             j += 1
             if j >= len(line):
                 break
-    # breakpoint()
+
     return total
 
 def part_two(lines: list[str]):
@@ -52,7 +43,6 @@ def part_two(lines: list[str]):
     for i, line in enumerate(lines):
         j = 0
         while j < len(line):
-            # print(j)
             num = ''
             ispart = False
             if j >= len(line):
@@ -62,12 +52,7 @@ def part_two(lines: list[str]):
                 if j >= len(line):
                     break
                 num += line[j]
-                # print(any(falseyaccess(falseyaccess(lines, i+1), j-1+x) not in list('1234567890.') for x in range(3)))
-                # breakpoint()
-                # 592 FLASE
-                # 664 FALSE
-                # if num == '592':
-                #     breakpoint()
+                
                 if any(falseyaccess(falseyaccess(lines, i-1), j-1+x) == '*' for x in range(3)):
                     ispart = True
                     for x in range(3):
@@ -88,9 +73,7 @@ def part_two(lines: list[str]):
                 j += 1
                 if j >= len(line):
                     break
-            # if num:
-                # print(num, ispart)
-                # breakpoint()
+
             if ispart:
                 for gear in gears:
                     if (j, int(num)) not in mapping[gear]:
@@ -99,10 +82,9 @@ def part_two(lines: list[str]):
             j += 1
             if j >= len(line):
                 break
-    # breakpoint()
+
     total = 0
     for gear, nums in mapping.items():
-        # breakpoint()
         if len(nums) == 2:
             total += nums[0][1] * nums[1][1]
     return total

@@ -277,3 +277,4 @@ if __name__ == '__main__':
 # TODO: interactive session with submit/verify commands
 # TODO: ALLOW TO RUN FILE BEFORE SUBMITTING (TO TEST)
 # TODO: use part 1 input if cant find part 2
+# TODO: change file structure to "dayXX" or "day_XX" (for github sorting)
